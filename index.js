@@ -18,7 +18,7 @@ module.exports.collapse_accumulator = collapse_accumulator
  */
 function read_and_process(file,cb){
     var accumulator = {}
-    read_file('./test/files/vds_id.1205668.truck.imputed.2012.csv'
+    read_file(file
               ,accumulator
               ,function(e,r){
                   if(e) return cb(e)
@@ -38,6 +38,40 @@ function read_and_process(file,cb){
  * words, sum up the various volumes, average the occupancy, etc)
  */
 
+
+
+/**
+ * read_and_minmax_ts
+ *
+ * Read a CSV file, extract the min and max timestamps
+ *
+ * @param {string} file the full filename to read in
+ * @param {read_process_callback} cb a function after the file is done.
+ * will be passed an error (or null), and the collapsed accumulator as
+ * the second argument.
+ * @returns {null}  just the callback thanks, after it is done
+ */
+function read_and_minmax_ts(file,cb){
+    var accumulator = {}
+    read_file(file
+              ,accumulator
+              ,function(e,r){
+                  if(e) return cb(e)
+                  var times = Object.keys(accumulator)
+                  var min = times[0]
+                  var max = times[0]
+                  times.forEach(function(t,i){
+                      min = min < t ? min : t
+                      max = max < t ? t : max
+                      return null
+                  })
+
+                  return cb(null,{'mints':min,'maxts':max})
+
+              })
+    return null
+
+}
 
 
 module.exports = read_and_process
