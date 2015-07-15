@@ -74,4 +74,5 @@ function read_and_minmax_ts(file,cb){
 }
 
 
-module.exports = read_and_process
+module.exports.read_and_process = read_and_process
+module.exports.read_and_minmax_ts = read_and_minmax_ts
