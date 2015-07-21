@@ -63,8 +63,12 @@ function read_and_minmax_ts(file,cb){
                       max = max < t ? t : max
                       return null
                   })
+                  var lanes = Object.keys(accumulator[times[0]])
+                  var detector_id = accumulator[times[0]][lanes[0]].detector_id
 
-                  return cb(null,{'mints':min,'maxts':max})
+                  return cb(null,{'mints':min,
+                                  'maxts':max,
+                                  'detector_id':detector_id})
 
               })
     return null
