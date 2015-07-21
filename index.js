@@ -1,8 +1,6 @@
 var read_file = require('./lib/read_file.js')
 var collapse_accumulator = require('./lib/collapse_accumulator.js')
 
-module.exports.read_file = read_file
-module.exports.collapse_accumulator = collapse_accumulator
 
 /**
  * read_and_process
@@ -76,3 +74,5 @@ function read_and_minmax_ts(file,cb){
 
 module.exports.read_and_process = read_and_process
 module.exports.read_and_minmax_ts = read_and_minmax_ts
+module.exports.read_file = read_file
+module.exports.collapse_accumulator = collapse_accumulator
