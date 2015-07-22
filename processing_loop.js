@@ -32,8 +32,6 @@ function control_loop(handle_file){
 
     mainQ.defer(config_okay,config_file)
     mainQ.await(function(e,config){
-        console.log(config_file)
-        console.log(config)
         var csv_path
 
         if(argv.path !== undefined){
@@ -68,10 +66,11 @@ function control_loop(handle_file){
 
         // have path, read it, process all the files
         var pattern = '*truck.imputed.'+year+'.csv'
-        console.log(pattern)
         fileQ.defer(glob,pattern,{cwd:csv_path,dot:true})
         fileQ.await(function(e,list){
             console.log('got ',list.length,' CSV files')
+            // debugging, just do 10
+            // list = list.slice(0,10)
             list.forEach(function(f){
                 f = csv_path + '/' + f
                 console.log(f)
