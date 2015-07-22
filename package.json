@@ -24,6 +24,8 @@
   "dependencies": {
     "couch_check_state": "jmarca/couch_check_state",
     "couch_set_state": "jmarca/couch_set_state",
+    "couchdb_bulkdoc_appender": "jmarca/couchdb_bulkdoc_appender",
+    "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
     "csv-parse": "^0.1.3",
     "lodash": "^3.10.0"
   }
