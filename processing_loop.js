@@ -37,16 +37,19 @@ function control_loop(handle_file){
         var csv_path
 
         if(argv.path !== undefined){
-            csv_path = path.normalize(rootdir+'/'+argv.path)
+            csv_path = argv.path
         }else{
             if(config.csv_path !== undefined){
-                csv_path = path.normalize(rootdir+'/'+config.csv_path)
+                csv_path = config.csv_path
             }
         }
         if(!csv_path){
             console.log('pass CSV path using --path argument')
             return null
         }else{
+            if(!path.isAbsolute(csv_path)){
+                path.normalize(rootdir+'/'+csv_path)
+            }
             console.log('setting csv path to '+csv_path)
 
         }
