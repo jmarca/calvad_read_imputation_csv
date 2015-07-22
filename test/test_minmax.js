@@ -18,15 +18,15 @@ var cdb
 
 function create_tempdb(cb){
     var date = new Date()
-    var test_db_unique = [config.couchdb.db,
+    var test_db_unique = [config.couchdb.trackingdb,
                           date.getHours(),
                           date.getMinutes(),
                           date.getSeconds(),
                           date.getMilliseconds()].join('-')
-    config.couchdb.db = test_db_unique
+    config.couchdb.trackingdb = test_db_unique
     cdb ='http://'+
         [config.couchdb.host+':'+config.couchdb.port
-        ,config.couchdb.db].join('/')
+        ,config.couchdb.trackingdb].join('/')
     request.put(cdb,{
         jar:true,
         'content-type': 'application/json',
@@ -77,7 +77,6 @@ before(function(done){
 
     config_okay(config_file,function(err,c){
         config=c
-        config.couchdb.db = 'test%2fminmax'
         queue(1)
         .defer(create_tempdb)
         .await(done)
@@ -108,18 +107,22 @@ describe('read csv for min max',function(){
                             should.not.exist(e)
                             // check couchdb doc for min and max values
 
-                            var taskmin = _.assign({}
-                                                   ,config.couchdb
-                                                   ,{'doc':'1205668'
-                                                     ,'year':2012
-                                                     ,'state':'mints'
-                                                    })
-                            var taskmax = _.assign({}
-                                                   ,config.couchdb
-                                                   ,{'doc':'1205668'
-                                                     ,'year':2012
-                                                     ,'state':'maxts'
-                                                    })
+                            var taskmin =
+                                    _.assign({}
+                                             ,config.couchdb
+                                             ,{'doc':'1205668'
+                                               ,'year':2012
+                                               ,'state':'mints'
+                                               ,'db':config.couchdb.trackingdb
+                                              })
+                            var taskmax =
+                                    _.assign({}
+                                             ,config.couchdb
+                                             ,{'doc':'1205668'
+                                               ,'year':2012
+                                               ,'state':'maxts'
+                                               ,'db':config.couchdb.trackingdb
+                                              })
                             var q = queue()
                             q.defer(check,taskmin)
                             q.defer(check,taskmax)

@@ -9,6 +9,9 @@ var svo = require('../lib/constants.js').store_variable_order
 
 function delete_tempdb(config,cb){
     var db = config.couchdb.imputeddb + '%2f12%2f2012'
+    var cdb ='http://'+
+        [config.couchdb.host+':'+config.couchdb.port
+        ,db].join('/')
 
     request.del(cdb
                 ,{
@@ -35,7 +38,7 @@ before(function(done){
 
     config_okay(config_file,function(err,c){
         config=c
-        config.couchdb.imputeddb = 'test%2fcollated'
+        //config.couchdb.imputeddb = 'test%2fcollated'
 
         return done()
     })
@@ -43,12 +46,12 @@ before(function(done){
 })
 
 
-// after(function(done){
-//     delete_tempdb(config,function(e){
-//         if(e) throw new Error(e)
-//         return done()
-//     })
-// })
+after(function(done){
+    delete_tempdb(config,function(e){
+        if(e) throw new Error(e)
+        return done()
+    })
+})
 
 var queue = require('queue-async')
 

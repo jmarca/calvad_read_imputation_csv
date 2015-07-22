@@ -10,9 +10,9 @@ var config_file
 if(argv.config === undefined){
     config_file = path.normalize(rootdir+'/../config.json')
 }else{
-    config_file = argv.config
+    config_file = path.normalize(rootdir+'/'+argv.config)
 }
-console.log('setting configuration file to ',config_file,'.  Change with the -config option.')
+console.log('setting configuration file to ',config_file,'.  Change with the --config option.')
 
 
 var config_okay = require('config_okay')
@@ -32,19 +32,23 @@ function control_loop(handle_file){
 
     mainQ.defer(config_okay,config_file)
     mainQ.await(function(e,config){
-
+        console.log(config_file)
+        console.log(config)
         var csv_path
 
-        if(argv.csv_path !== undefined){
-            csv_path = argv.csv_path
+        if(argv.path !== undefined){
+            csv_path = path.normalize(rootdir+'/'+argv.path)
         }else{
             if(config.csv_path !== undefined){
-                csv_path = config.csv_path
+                csv_path = path.normalize(rootdir+'/'+config.csv_path)
             }
         }
         if(!csv_path){
-            console.log('pass CSV path using -path argument')
+            console.log('pass CSV path using --path argument')
             return null
+        }else{
+            console.log('setting csv path to '+csv_path)
+
         }
         var year
         if(argv.year !== undefined){
@@ -60,10 +64,14 @@ function control_loop(handle_file){
         }
 
         // have path, read it, process all the files
-        var pattern = new RegExp('.*truck.imputed.'+year+'.csv')
+        var pattern = '*truck.imputed.'+year+'.csv'
+        console.log(pattern)
         fileQ.defer(glob,pattern,{cwd:csv_path,dot:true})
         fileQ.await(function(e,list){
+            console.log('got ',list.length,' CSV files')
             list.forEach(function(f){
+                f = csv_path + '/' + f
+                console.log(f)
                 processQ.defer(handle_file,f,config,year)
                 return null
             })
