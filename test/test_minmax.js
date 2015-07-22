@@ -14,7 +14,6 @@ var headers = {
 };
 
 
-var cdb
 
 function create_tempdb(cb){
     var date = new Date()
