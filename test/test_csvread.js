@@ -3,7 +3,7 @@ var _ = require('lodash')
 
 var read_file = require('../lib/read_file.js')
 var collapse_accumulator = require('../lib/collapse_accumulator.js')
-var read_and_process = require('../.')
+var read_and_process = require('../.').read_and_process
 
 describe('read csv',function(){
     it('should read a file',function(done){
@@ -68,12 +68,12 @@ describe('read csv',function(){
                           v.should.have.keys('ts'
                                              ,'lanes'
                                              ,'detector_id'
-                                             ,'id'
+                                             ,'_id'
                                              ,'data')
                           v.ts.should.eql(k)
                           v.lanes.should.eql(4)
                           v.detector_id.should.eql('1205668')
-                          v.id.should.eql('1205668-'+v.ts)
+                          v._id.should.eql('1205668-'+v.ts)
                           v.data.should.be.instanceOf(Array)
                           v.data.should.have.lengthOf(14)
                           v.data[0].should.eql(1)
@@ -102,12 +102,12 @@ describe('read and process all at once',function(){
                                      v.should.have.keys('ts'
                                                         ,'lanes'
                                                         ,'detector_id'
-                                                        ,'id'
+                                                        ,'_id'
                                                         ,'data')
                                      v.ts.should.eql(k)
                                      v.lanes.should.eql(4)
                                      v.detector_id.should.eql('1205668')
-                                     v.id.should.eql('1205668-'+v.ts)
+                                     v._id.should.eql('1205668-'+v.ts)
                                      v.data.should.be.instanceOf(Array)
                                      v.data.should.have.lengthOf(14)
                                      v.data[0].should.eql(1)
