@@ -20,12 +20,12 @@ var config_okay = require('config_okay')
 
 var queue = require('queue-async')
 var num_CPUs = require('os').cpus().length;
-num_CPUs = 2 // probably not much better than this because I'm reading files
+//num_CPUs = 1 // testing probably not much better higher than 2
+             // because I'm reading files
 
 var mainQ = queue(1)
 var fileQ = queue(1)
 var processQ = queue(num_CPUs)
-
 
 
 function control_loop(handle_file){
@@ -70,7 +70,7 @@ function control_loop(handle_file){
         fileQ.await(function(e,list){
             console.log('got ',list.length,' CSV files')
             // debugging, just do 10
-            // list = list.slice(0,10)
+            // list = list.slice(0,2)
             list.forEach(function(f){
                 f = csv_path + '/' + f
                 console.log(f)
