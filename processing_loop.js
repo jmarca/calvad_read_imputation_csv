@@ -20,15 +20,15 @@ var config_okay = require('config_okay')
 
 var queue = require('queue-async')
 var num_CPUs = require('os').cpus().length;
-//num_CPUs = 1 // testing probably not much better higher than 2
-             // because I'm reading files
+num_CPUs -= 1 // leave slack for couchdb to work
 
 var mainQ = queue(1)
 var fileQ = queue(1)
 var processQ = queue(num_CPUs)
 
+var forker = require('./lib/forker.js')
 
-function control_loop(handle_file){
+function control_loop(handler){
 
     mainQ.defer(config_okay,config_file)
     mainQ.await(function(e,config){
@@ -70,11 +70,14 @@ function control_loop(handle_file){
         fileQ.await(function(e,list){
             console.log('got ',list.length,' CSV files')
             // debugging, just do 10
-            // list = list.slice(0,2)
-            list.forEach(function(f){
+            // list = list.slice(590,600)
+            // list = [list[600],list[601]]
+            list.forEach(function(f,idx){
+                // resume at 600
+                if (idx < 600) return null
                 f = csv_path + '/' + f
-                console.log(f)
-                processQ.defer(handle_file,f,config,year)
+                //console.log(f)
+                processQ.defer(forker,handler,config,f,year,idx)
                 return null
             })
         })
