@@ -63,3 +63,16 @@ lengths, and am undecided about whether or not I should merge it in,
 or do it after the fact.  If merging, then the config file will need a
 postgresql link to go fetch the segment lengths.  But I think I am
 going to do it after the fact.
+
+# And then...
+
+As of April 2016, the above comment still holds.  That is, the lengths
+have not been merged into couchdb docs, but rather have to be queried
+from postgresql.
+
+Anyway, the next step after running this code is to generate the
+precached areas, which grabs the lengths from postgresql and
+multiplies by the volume and saves.
+
+To do that, go look at the repository `calvad_precache_areas` and read
+the README there.

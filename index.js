@@ -80,3 +80,4 @@ module.exports.read_and_process = read_and_process
 module.exports.read_and_minmax_ts = read_and_minmax_ts
 module.exports.read_file = read_file
 module.exports.collapse_accumulator = collapse_accumulator
+module.exports.handle_file = require('./lib/handle_store_file.js')
