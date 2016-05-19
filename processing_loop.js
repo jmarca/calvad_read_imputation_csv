@@ -18,7 +18,7 @@ console.log('setting configuration file to ',config_file,'.  Change with the --c
 var config_okay = require('config_okay')
 
 
-var queue = require('queue-async')
+var queue = require('d3-queue').queue
 var num_CPUs = require('os').cpus().length;
 num_CPUs -= 1 // leave slack for couchdb to work
 
