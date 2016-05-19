@@ -74,7 +74,7 @@ function control_loop(handler){
             // list = [list[600],list[601]]
             list.forEach(function(f,idx){
                 // resume at 600
-                if (idx < 600) return null
+                // if (idx < 600) return null
                 f = csv_path + '/' + f
                 //console.log(f)
                 processQ.defer(forker,handler,config,f,year,idx)
