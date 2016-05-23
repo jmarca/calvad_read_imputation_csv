@@ -65,7 +65,7 @@ function control_loop(handler){
         }
 
         // have path, read it, process all the files
-        var pattern = '*truck.imputed.'+year+'.csv'
+        var pattern = 'vds*truck.imputed.'+year+'*.csv'
         fileQ.defer(glob,pattern,{cwd:csv_path,dot:true})
         fileQ.await(function(e,list){
             console.log('got ',list.length,' CSV files')
