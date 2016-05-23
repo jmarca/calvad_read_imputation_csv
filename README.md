@@ -47,6 +47,13 @@ except the owner) and should contain something like:
 }
 ```
 
+
+## Note about imputeddb
+
+If you look at the code in './lib/handle_store_file.js', you will see
+that the actual couchdb database this program will use is the
+concatenation of the district and year with whatever you pass in.
+
 At the moment I am not using any postgresql configuration for this code.
 
 Obviously put the real host, port, username, and password for couchdb
