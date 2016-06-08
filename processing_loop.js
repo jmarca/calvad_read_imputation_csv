@@ -23,7 +23,6 @@ var num_CPUs = require('os').cpus().length;
 num_CPUs -= 1 // leave slack for couchdb to work
 
 var mainQ = queue(1)
-var fileQ = queue(1)
 var processQ = queue(num_CPUs)
 
 var forker = require('./lib/forker.js')
@@ -66,8 +65,7 @@ function control_loop(handler){
 
         // have path, read it, process all the files
         var pattern = '*truck.imputed.'+year+'*.csv'
-        fileQ.defer(glob,pattern,{cwd:csv_path,dot:true})
-        fileQ.await(function(e,list){
+        glob(pattern,{cwd:csv_path,dot:true},function(e,list){
             console.log('got ',list.length,' CSV files')
             // debugging, just do 10
             // list = list.slice(590,600)
@@ -80,10 +78,10 @@ function control_loop(handler){
                 processQ.defer(forker,handler,config,f,year,idx)
                 return null
             })
-        })
-        processQ.await(function(ee,rr){
-            console.log('queue drained for all files')
-            return null
+            processQ.await(function(ee,rr){
+                console.log('queue drained for all files')
+                return null
+            })
         })
         return null
     })
