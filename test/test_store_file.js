@@ -8,7 +8,7 @@ var request = require('request')
 var svo = require('../lib/constants.js').store_variable_order
 
 function delete_tempdb(config,cb){
-    var db = config.couchdb.imputeddb + '%2f12%2f2012'
+    var db = config.couchdb.imputeddb
     var cdb ='http://'+
         [config.couchdb.host+':'+config.couchdb.port
         ,db].join('/')
@@ -33,12 +33,28 @@ var config_okay = require('config_okay')
 var config_file = rootdir+'/../test.config.json'
 var config
 var check = require('couch_check_state')
+var create_db =  require('../lib/create_db.js')
+
 
 before(function(done){
 
     config_okay(config_file,function(err,c){
         config=c
         //config.couchdb.imputeddb = 'test%2fcollated'
+    var date = new Date()
+    var test_db_unique = ['a%2ftest%2fdb%2f',
+                          date.getHours(),
+                          date.getMinutes(),
+                          date.getSeconds(),
+                          date.getMilliseconds()].join('-')
+        var db = test_db_unique
+        config.couchdb.imputeddb = db
+        create_db(config,db,function(e,r){
+            should.not.exist(e)
+            should.exist(r)
+            should.not.exist(r.error)
+            return done(e)
+        })
 
         return done()
     })
