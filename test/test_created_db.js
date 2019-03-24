@@ -1,77 +1,61 @@
-var should = require('should')
-var _ = require('lodash')
+const tap = require('tap')
 
-var create_db =  require('../lib/create_db.js')
+const path    = require('path')
+const rootdir = path.normalize(__dirname)
 
-var db // global so I can delete it
-var request = require('request')
+const config_file = rootdir+'/../test.config.json'
+const config_okay = require('config_okay')
+const  _ = require('lodash')
+
+const utils = require('./utils.js')
+const create_db =  require('../lib/create_db.js')
 
 
-var path    = require('path')
-var rootdir = path.normalize(__dirname)
-var config_okay = require('config_okay')
-var config_file = rootdir+'/../test.config.json'
-var config
+config_okay(config_file)
+    .then( async (config) => {
 
-before(function(done){
-    config_okay(config_file,function(err,c){
-        config=c
-        return done()
-    })
-    return null
-})
 
-function delete_tempdb(config,cb){
-    var cdb ='http://'+
-        [config.couchdb.host+':'+config.couchdb.port
-        ,db].join('/')
-    request.del(cdb
-                ,{
-                    'content-type': 'application/json',
-                    'auth': {
-                        'user': config.couchdb.auth.username,
-                        'pass': config.couchdb.auth.password,
-                        'sendImmediately': true
-                    }
-                }
-                ,cb)
-    return null
+        const  date = new Date()
+        const db = ['a%2ftest%2fdb%2f',
+                    date.getHours(),
+                    date.getMinutes(),
+                    date.getSeconds(),
+                    date.getMilliseconds()].join('-')
 
-}
-
-after(function(done){
-
-    delete_tempdb(config,function(e){
-        if(e) throw new Error(e)
-        return done()
-    })
-
-})
-
-describe('create db',function(){
-    var date = new Date()
-    var test_db_unique = ['a%2ftest%2fdb%2f',
-                          date.getHours(),
-                          date.getMinutes(),
-                          date.getSeconds(),
-                          date.getMilliseconds()].join('-')
-    db = test_db_unique
-    it('should create a db',function(done){
-        create_db(config,db,function(e,r){
-            should.not.exist(e)
-            should.exist(r)
-            should.not.exist(r.error)
-            return done(e)
+        await tap.test('should create a db', t => {
+            utils.promise_wrapper(create_db,
+                                  config,
+                                  db)
+                .then( r =>{
+                    t.ok(r)
+                    t.notOk(r.error)
+                    return t.end()
+                })
+                .catch( e => {
+                    console.log('error',e)
+                    t.fail()
+                })
+        })
+        await tap.test('should fail with error statement on duplicate db', t =>{
+            utils.promise_wrapper(create_db,
+                                  config,
+                                  db)
+                .then( r =>{
+                    t.ok(r)
+                    t.ok(r.error)
+                    return t.end()
+                })
+                .catch( e => {
+                    console.log('error',e)
+                    t.fail()
+                })
         })
 
+        tap.end()
+        config.couchdb.db = db
+        await utils.delete_tempdb(config)
+            .catch( e => {
+                console.log('error deleting',e)
+            })
+        return null
     })
-    it('should fail with error statement on duplicate db',function(done){
-        create_db(config,db,function(e,r){
-            should.not.exist(e)
-            should.exist(r)
-            r.should.have.property('error')
-            return done(e)
-        })
-
-    })
-})
