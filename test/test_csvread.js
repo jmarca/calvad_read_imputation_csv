@@ -1,121 +1,145 @@
-var should = require('should')
-var _ = require('lodash')
+const tap = require('tap')
 
-var read_file = require('../lib/read_file.js')
-var collapse_accumulator = require('../lib/collapse_accumulator.js')
-var read_and_process = require('../.').read_and_process
+const path    = require('path')
+const rootdir = path.normalize(__dirname)
 
-describe('read csv',function(){
-    it('should read a file',function(done){
-        var accum = {}
-        read_file('./test/files/vds_id.1205668.truck.imputed.2012.csv'
-                  ,accum
-                  ,function(e,r){
+const input_csv = rootdir+'/files/vds_id.1205668.truck.imputed.2012.csv'
+const config_okay = require('config_okay')
+const  _ = require('lodash')
 
-                      should.exist(accum)
-                      Object.keys(accum).should.have.lengthOf(2708)
+const utils = require('./utils.js')
 
-                      var ts_pattern = /^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$/
-                      _.each(accum,function(v,k){
+const read_file = require('../lib/read_file.js')
+const collapse_accumulator = require('../lib/collapse_accumulator.js')
+const read_and_process = require('../.').read_and_process
+
+async function test(){
+    await tap.test('read csv file',{'timeout':100000}, (t) => {
+        //t.plan(186856)
+        let accum = {}
+        utils.promise_wrapper(read_file
+                        ,input_csv
+                        ,accum)
+            .then( r => {
+                t.ok(accum)
+                t.equals(Object.keys(accum).length,2708)
+
+                const ts_pattern = /^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$/
+                _.each(accum,function(v,k){
                           // timestamp
-                          k.should.match(ts_pattern)
-                          v.should.be.an.instanceOf(Object)
-                          v.should.have.keys('l1','r1','r2','r3')
-                          _.each(v,function(vv,kk){
-                              // lane
-                              // already tested that lanes (kk) matched expected outcome above
-                              vv.should.be.an.instanceOf(Object)
-                              vv.should.have.keys(
-                                  'imputations',
-                                  'detector_id',
-                                  'id',
-                                  'n',
-                                  'o',
-                                  'wgt_spd_all_veh_speed',
-                                  'count_all_veh_speed',
-                                  'not_heavyheavy',
-                                  'heavyheavy',
-                                  'hh_weight',
-                                  'hh_axles',
-                                  'hh_speed',
-                                  'nh_weight',
-                                  'nh_axles',
-                                  'nh_speed'
+                    t.match(k,ts_pattern)
+                    t.type(v,'object')
+                    t.same(Object.keys(v).sort(),['l1','r1','r2','r3'])
+                    _.each(v,function(vv,kk){
+                        // lane
+                        // already tested that lanes (kk) matched expected outcome above
+                        t.type(vv,'object')
+                        t.same(Object.keys(vv).sort(),
+                               [
+                                   'count_all_veh_speed',
+                                   'detector_id',
+                                   'heavyheavy',
+                                   'hh_axles',
+                                   'hh_speed',
+                                   'hh_weight',
+                                   'id',
+                                   'imputations',
+                                   'n',
+                                   'nh_axles',
+                                   'nh_speed',
+                                   'nh_weight',
+                                   'not_heavyheavy',
+                                   'o',
+                                   'wgt_spd_all_veh_speed'
+                               ]
                               );
 
-                              (['n',
-                                'o',
-                                'wgt_spd_all_veh_speed',
-                                'count_all_veh_speed',
-                                'not_heavyheavy',
-                                'heavyheavy',
-                                'hh_weight',
-                                'hh_axles',
-                                'hh_speed',
-                                'nh_weight',
-                                'nh_axles',
-                                'nh_speed']).forEach(function(datum){
-                                    (vv[datum]).should.have.type('number')
-                                })
+                        (['n',
+                          'o',
+                          'wgt_spd_all_veh_speed',
+                          'count_all_veh_speed',
+                          'not_heavyheavy',
+                          'heavyheavy',
+                          'hh_weight',
+                          'hh_axles',
+                          'hh_speed',
+                          'nh_weight',
+                          'nh_axles',
+                          'nh_speed']).forEach(function(datum){
+                              t.type(vv[datum],'number')
                           })
-                      })
-                      var collapsed = collapse_accumulator(accum)
-                      collapsed.should.be.instanceOf(Object)
+                    })
+                })
+                const collapsed = collapse_accumulator(accum)
+                t.type(collapsed,'object')
 
-                      Object.keys(collapsed).should.eql(Object.keys(accum))
-                      _.each(collapsed,function(v,k){
-                          v.should.be.an.instanceOf(Object)
-                          v.should.have.keys('ts'
-                                             ,'lanes'
-                                             ,'detector_id'
-                                             ,'_id'
-                                             ,'data')
-                          v.ts.should.eql(k)
-                          v.lanes.should.eql(4)
-                          v.detector_id.should.eql('1205668')
-                          v._id.should.eql('1205668-'+v.ts)
-                          v.data.should.be.instanceOf(Array)
-                          v.data.should.have.lengthOf(14)
-                          v.data[0].should.eql(1)
-                          v.data[1].should.eql(v.lanes)
-                      })
-                      return done()
-                  })
-        return null
+                t.same(Object.keys(collapsed),Object.keys(accum))
+                _.each(collapsed,function(v,k){
+                    t.type(v,'object')
+                    t.same(Object.keys(v),['ts'
+                                           ,'lanes'
+                                           ,'detector_id'
+                                           ,'_id'
+                                           ,'data'])
+                    t.same(v.ts,k)
+                    t.equal(v.lanes,4)
+                    t.equal(v.detector_id,'1205668')
+                    t.equal(v._id,'1205668-'+v.ts)
+                    t.type(v.data,Array)
+                    t.equal(v.data.length,14)
+                    t.equal(v.data[0],1)
+                    t.equal(v.data[1],v.lanes)
+                })
+            })
+            .catch( e => {
+                console.log('error',e)
+                t.fail()
+            })
+            .then(()=>{
+                t.end()
+            })
     })
 
-})
+    await tap.test('read and process all at once',t =>{
+        utils.promise_wrapper(read_and_process,
+                              './test/files/vds_id.1205668.truck.imputed.2012.csv')
+            .then(r=>{
+                t.ok(r)
+                t.equals(Object.keys(r).length,2708)
 
-describe('read and process all at once',function(){
-    it('should work',function(done){
-        read_and_process('./test/files/vds_id.1205668.truck.imputed.2012.csv'
-                         ,function(e,r){
-                             should.not.exist(e)
-                             should.exist(r)
-                             Object.keys(r).should.have.lengthOf(2708)
+                const ts_pattern = /^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$/
+                _.each(r,function(v,k){
+                    // timestamp
+                    t.match(k,ts_pattern)
+                    t.type(v,Object)
+                    t.same(Object.keys(v).sort(),
+                           [
+                               '_id'
+                               ,'data'
+                               ,'detector_id'
+                               ,'lanes'
+                               ,'ts'
+                           ])
+                    t.same(v.ts,k)
+                    t.equal(v.lanes,4)
+                    t.equal(v.detector_id,'1205668')
+                    t.equal(v._id,'1205668-'+v.ts)
+                    t.type(v.data,Array)
+                    t.equal(v.data.length,14)
+                    t.equal(v.data[0],1)
+                    t.equal(v.data[1],v.lanes)
+                })
+            })
+            .catch( e => {
+                console.log('error',e)
+                t.fail()
+            })
+            .then(()=>{
+                t.end()
+            })
 
-                             var ts_pattern = /^\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d$/
-                                 _.each(r,function(v,k){
-                                     // timestamp
-                                     k.should.match(ts_pattern)
-                                     v.should.be.an.instanceOf(Object)
-                                     v.should.have.keys('ts'
-                                                        ,'lanes'
-                                                        ,'detector_id'
-                                                        ,'_id'
-                                                        ,'data')
-                                     v.ts.should.eql(k)
-                                     v.lanes.should.eql(4)
-                                     v.detector_id.should.eql('1205668')
-                                     v._id.should.eql('1205668-'+v.ts)
-                                     v.data.should.be.instanceOf(Array)
-                                     v.data.should.have.lengthOf(14)
-                                     v.data[0].should.eql(1)
-                                     v.data[1].should.eql(v.lanes)
-                                 })
-                             return done()
-                         })
-        return null
     })
 
-})
+
+}
+test()

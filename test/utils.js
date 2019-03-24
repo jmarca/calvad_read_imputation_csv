@@ -11,16 +11,29 @@ function delete_tempdb(config){
 }
 
 function promise_wrapper(fn,arg1,arg2){
-    return new Promise((resolve, reject)=>{
-        fn(arg1,arg2,function(e,r){
-            if(e){
-                console.log(e)
-                return reject(e)
-            }else{
-                return resolve(r)
-            }
+    if (arg2 !== undefined) {
+        return new Promise((resolve, reject)=>{
+            fn(arg1,arg2,function(e,r){
+                if(e){
+                    console.log(e)
+                    return reject(e)
+                }else{
+                    return resolve(r)
+                }
+            })
         })
-    })
+    }else{
+        return new Promise((resolve, reject)=>{
+            fn(arg1,function(e,r){
+                if(e){
+                    console.log(e)
+                    return reject(e)
+                }else{
+                    return resolve(r)
+                }
+            })
+        })
+    }
 }
 
 exports.delete_tempdb = delete_tempdb
