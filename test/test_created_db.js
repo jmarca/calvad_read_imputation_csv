@@ -46,7 +46,7 @@ config_okay(config_file)
                     return t.end()
                 })
                 .catch( e => {
-                    console.log('error',e)
+                    console.log('error caught')
                     t.fail()
                 })
         })
@@ -55,7 +55,7 @@ config_okay(config_file)
         config.couchdb.db = db
         await utils.delete_tempdb(config)
             .catch( e => {
-                console.log('error deleting',e)
+                console.log('error deleting')
             })
         return null
     })

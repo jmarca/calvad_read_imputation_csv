@@ -1,138 +1,146 @@
-var should = require('should')
-var _ = require('lodash')
 
-var handler = require('../lib/handle_store_file.js')
+check = require('couch_check_state')
+const tap = require('tap')
+const get_district = require('../lib/get_district.js')
+const utils = require('./utils.js')
+const superagent = require('superagent')
 
-var request = require('request')
+const _ = require('lodash')
 
-var svo = require('../lib/constants.js').store_variable_order
+const create_db =  require('../lib/create_db.js')
+const handler = require('../lib/handle_store_file.js')
+const svo = require('../lib/constants.js').store_variable_order
 
-function delete_tempdb(config,cb){
-    var db = config.couchdb.imputeddb + '%2f12%2f2012'
-    var cdb ='http://'+
-        [config.couchdb.host+':'+config.couchdb.port
-        ,db].join('/')
-
-    request.del(cdb
-                ,{
-                    'content-type': 'application/json',
-                    'auth': {
-                        'user': config.couchdb.auth.username,
-                        'pass': config.couchdb.auth.password,
-                        'sendImmediately': true
-                    }
-                }
-                ,cb)
-    return null
-
-}
-
-var path    = require('path')
-var rootdir = path.normalize(__dirname)
-var config_okay = require('config_okay')
-var config_file = rootdir+'/../test.config.json'
-var config
-var check = require('couch_check_state')
-
-before(function(done){
-
-    config_okay(config_file,function(err,c){
-        config=c
-        //config.couchdb.imputeddb = 'test%2fcollated'
-
-        return done()
-    })
-    return null
-})
+// just get the file name, pass to min_max_hanler for testing
 
 
-after(function(done){
-    delete_tempdb(config,function(e){
-        if(e) throw new Error(e)
-        return done()
-    })
-})
+const path    = require('path')
+const rootdir = path.normalize(__dirname)
+const config_file = rootdir+'/../test.config.json'
+const config_okay = require('config_okay')
+const config={}
 
-var queue = require('queue-async')
 
-describe('read csv for min max',function(){
-    it('should read a file',function(done){
-        handler('./test/files/vds_id.1205668.truck.imputed.2012.csv'
-                ,config
-                ,2012
-                ,function(e){
-                    should.not.exist(e)
+config_okay(config_file)
+    .then( async (c) => {
+        config.couchdb=c.couchdb
+
+        const  date = new Date()
+        const db = ['an%2fimputed%2fdb%2f',
+                    date.getHours(),
+                    date.getMinutes(),
+                    date.getSeconds(),
+                    date.getMilliseconds()].join('-')
+
+        // await tap.test('should create a db', t => {
+        //     utils.promise_wrapper(create_db,
+        //                           config,
+        //                           db)
+        //         .then( r =>{
+        //             t.ok(r)
+        //             t.notOk(r.error)
+        //             return t.end()
+        //         })
+        //         .catch( e => {
+        //             console.log('error',e)
+        //             t.fail()
+        //         })
+        // })
+        config.couchdb.imputeddb = db
+        config.couchdb.db = db
+
+        tap.test('read csv file for min max', async t =>{
+            await utils.promise_wrapper(handler,
+                                        './test/files/vds_id.1205668.truck.imputed.2012.csv'
+                                        ,config
+                                        ,2012)
+                .then(()=>{
                     // check couchdb doc for values
-                    var tests = queue(1)
-                    tests.defer(createddb,config)
-                    tests.defer(hasmin,config)
-                    tests.defer(hasmax,config)
-                    tests.await(function(e,r){
-                        return done(e)
-                    })
-                    return null
+                    return t.test('test db created',test_createddb)
                 })
-        return null
+                .then(()=>{
+                    return t.test('test has a minimum',hasmin)
+                })
+                .then(()=>{
+                    return t.test('test has a maximum',hasmax)
+                })
+                .catch( e =>{
+                    console.log('caught error',e)
+                    t.fail()
+                })
+                .then(()=>{
+                    return t.end()
+                })
+        })
+            .then(async ()=>{
+                tap.end()
+                config.couchdb.db = db + '%2fd12%2f2012'
+                await utils.delete_tempdb(config)
+                    .catch( e => {
+                        console.log('error deleting')
+                    })
+                return null
+            })
     })
-})
 
 
-function createddb(config,cb){
+
+function test_createddb(t){
     var url = 'http://'+ config.couchdb.host+':'+config.couchdb.port
-    var db = config.couchdb.imputeddb + '%2f12%2f2012'
+    var db = config.couchdb.imputeddb + '%2fd12%2f2012'
     var cdb =url + '/' + db
-    request.get(
-        {  'uri': cdb
-           , 'content-type': 'application/json'
-           , 'json':true
-
-        }
-        , function (e,r,b){
-
-            // body should be json decoded, right?
-            should.not.exist(e)
-            should.exist(b)
-            b.should.not.have.property('error')
-            b.should.have.property('doc_count')
-            b.doc_count.should.be.above(0)
-            b.doc_count.should.eql(2708) // 10832 lines, 4 lanes
-            return cb(null)
+    return superagent.get(cdb)
+        .type('json')
+        .then(r=>{
+            t.ok(r.body)
+            const b = r.body
+            t.notOk(b.error)
+            t.ok(b.doc_count)
+            t.ok(b.doc_count>0)
+            t.equal(b.doc_count,2708)
+            return null
+        })
+        .catch( e =>{
+            console.log('caught error',e)
+            t.fail()
+        })
+        .then(()=>{
+            return t.end()
         })
 }
 
-function hasmin(config,cb){
+function approx(a,b,delta){
+    return Math.abs(a - b) <= delta
+}
+
+function hasmin(t){
     var url = 'http://'+ config.couchdb.host+':'+config.couchdb.port
-    var db = config.couchdb.imputeddb + '%2f12%2f2012'
+    var db = config.couchdb.imputeddb + '%2fd12%2f2012'
     var cdb =url + '/' + db
     var doc = "1205668-2012-09-06 14:00:00"
-    request.get(
-        {  'uri': cdb + '/' + doc
-           , 'content-type': 'application/json'
-           , 'json':true
-        }
-        , function (e,r,b){
-            should.not.exist(e)
-            should.exist(b)
-            b.should.have.keys('_id','_rev','ts','lanes','detector_id','data')
-            b.ts.should.eql("2012-09-06 14:00:00")
-            b.lanes.should.eql(4)
-            b.data.should.have.length(14)
-            b.data[svo.n].should.be.approximately(3153.9785962235,0.000001)
-	    b.data[svo.o].should.be.approximately(0.0848356591,0.000001)
-            b.data[svo.wgt_spd_all_veh_speed].should.be.approximately(65.6615481851,0.000001)
-            b.data[svo.count_all_veh_speed].should.be.approximately(3059.0311392817,0.000001)
-            b.data[svo.not_heavyheavy].should.be.approximately(89.3919895599,0.000001)
-            b.data[svo.heavyheavy].should.be.approximately(90.6037589141,0.000001)
-            b.data[svo.hh_weight].should.be.approximately(38.2962816872,0.000001)
-            b.data[svo.hh_axles].should.be.approximately(4.4948021844,0.000001)
-            b.data[svo.hh_speed].should.be.approximately(49.1686765558,0.000001)
-            b.data[svo.nh_weight].should.be.approximately(11.53163557,0.000001)
-            b.data[svo.nh_axles].should.be.approximately(1.3696953295,0.000001)
-            b.data[svo.nh_speed].should.be.approximately(65.0317028776,0.000001)
-
-            return cb(null)
+    return superagent.get(cdb+'/'+doc)
+        .type('json')
+        .then(r=>{
+            t.ok(r.body)
+            const b = r.body
+            t.same(Object.keys(b).sort(),['_id','_rev','ts','lanes','detector_id','data'].sort())
+            t.equal(b.ts,"2012-09-06 14:00:00")
+            t.equal(b.lanes,4)
+            t.equal(b.data.length,14)
+            t.ok(approx(b.data[svo.n],3153.9785962235,0.000001))
+	    t.ok(approx(b.data[svo.o],0.0848356591,0.000001))
+            t.ok(approx(b.data[svo.wgt_spd_all_veh_speed],65.6615481851,0.000001))
+            t.ok(approx(b.data[svo.count_all_veh_speed],3059.0311392817,0.000001))
+            t.ok(approx(b.data[svo.not_heavyheavy],89.3919895599,0.000001))
+            t.ok(approx(b.data[svo.heavyheavy],90.6037589141,0.000001))
+            t.ok(approx(b.data[svo.hh_weight],38.2962816872,0.000001))
+            t.ok(approx(b.data[svo.hh_axles],4.4948021844,0.000001))
+            t.ok(approx(b.data[svo.hh_speed],49.1686765558,0.000001))
+            t.ok(approx(b.data[svo.nh_weight],11.53163557,0.000001))
+            t.ok(approx(b.data[svo.nh_axles],1.3696953295,0.000001))
+            t.ok(approx(b.data[svo.nh_speed],65.0317028776,0.000001))
+            return t.end()
         })
-    return null
 }
 
 // source rows
@@ -143,66 +151,33 @@ function hasmin(config,cb){
 
 
 
-function hasmax(config,cb){
+function hasmax(t){
     var url = 'http://'+ config.couchdb.host+':'+config.couchdb.port
-    var db = config.couchdb.imputeddb + '%2f12%2f2012'
+    var db = config.couchdb.imputeddb + '%2fd12%2f2012'
     var cdb =url + '/' + db
     var doc = "1205668-2012-12-28 09:00:00"
-    request.get(
-        {  'uri': cdb + '/' + doc
-           , 'content-type': 'application/json'
-           , 'json':true
-        }
-        , function (e,r,b){
-            should.not.exist(e)
-            should.exist(b)
-            b.should.have.keys('_id','_rev','ts','lanes','detector_id','data')
-            b.ts.should.eql("2012-12-28 09:00:00")
-            b.lanes.should.eql(4)
-            b.data.should.have.length(14)
-
-            b.data[svo.n].should.be.approximately(1286.0745603789,0.000001)
-	    b.data[svo.o].should.be.approximately(0.0860591722,0.000001)
-            b.data[svo.wgt_spd_all_veh_speed].should.be.approximately(50.5282921217,0.000001)
-            b.data[svo.count_all_veh_speed].should.be.approximately(1410.7302312415,0.000001)
-            b.data[svo.not_heavyheavy].should.be.approximately(57.2819450153,0.000001)
-            b.data[svo.heavyheavy].should.be.approximately(59.4976573709,0.000001)
-            b.data[svo.hh_weight].should.be.approximately(29.6915981966,0.000001)
-            b.data[svo.hh_axles].should.be.approximately(4.3542728187,0.000001)
-            b.data[svo.hh_speed].should.be.approximately(55.0519569329,0.000001)
-            b.data[svo.nh_weight].should.be.approximately(9.4554787921,0.000001)
-            b.data[svo.nh_axles].should.be.approximately(1.7096261934,0.000001)
-            b.data[svo.nh_speed].should.be.approximately(42.2881596677,0.000001)
-
-
-
-            return cb(null)
+    return superagent.get(cdb+'/'+doc)
+        .type('json')
+        .then(r=>{
+            t.ok(r.body)
+            const b = r.body
+            t.same(Object.keys(b).sort(),['_id','_rev','ts','lanes','detector_id','data'].sort())
+            t.equal(b.ts,"2012-12-28 09:00:00")
+            t.equal(b.lanes,4)
+            t.equal(b.data.length,14)
+            t.ok(approx(b.data[svo.n],1286.0745603789,0.000001))
+	    t.ok(approx(b.data[svo.o],0.0860591722,0.000001))
+            t.ok(approx(b.data[svo.wgt_spd_all_veh_speed],50.5282921217,0.000001))
+            t.ok(approx(b.data[svo.count_all_veh_speed],1410.7302312415,0.000001))
+            t.ok(approx(b.data[svo.not_heavyheavy],57.2819450153,0.000001))
+            t.ok(approx(b.data[svo.heavyheavy],59.4976573709,0.000001))
+            t.ok(approx(b.data[svo.hh_weight],29.6915981966,0.000001))
+            t.ok(approx(b.data[svo.hh_axles],4.3542728187,0.000001))
+            t.ok(approx(b.data[svo.hh_speed],55.0519569329,0.000001))
+            t.ok(approx(b.data[svo.nh_weight],9.4554787921,0.000001))
+            t.ok(approx(b.data[svo.nh_axles],1.7096261934,0.000001))
+            t.ok(approx(b.data[svo.nh_speed],42.2881596677,0.000001))
+            return t.end()
         })
     return null
 }
-
-//                                                    ,config.couchdb
-//                                                    ,{'doc':'1205668'
-//                                                      ,'year':2012
-//                                                      ,'state':'mints'
-//                                                     })
-//                             var taskmax = _.assign({}
-//                                                    ,config.couchdb
-//                                                    ,{'doc':'1205668'
-//                                                      ,'year':2012
-//                                                      ,'state':'maxts'
-//                                                     })
-//                             var q = queue()
-//                             q.defer(check,taskmin)
-//                             q.defer(check,taskmax)
-//                             q.awaitAll(function(e,r){
-//                                 r[0].should.eql('2012-09-06 14:00:00')
-//                                 r[1].should.eql('2012-12-28 09:00:00')
-//                                 return done()
-//                             })
-//                             return null
-//                         })
-//         return null
-//     })
-//     return null
-// })

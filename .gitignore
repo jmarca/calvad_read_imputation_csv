@@ -3,3 +3,5 @@
 config.json
 test.config.json
 .tern-port
+.nyc_output
+coverage

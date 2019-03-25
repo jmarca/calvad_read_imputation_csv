@@ -4,7 +4,8 @@
   "description": "Read imputation output CSV files, store in CouchDB",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "tap test/**/test*.js --timeout 100000 --cov",
+    "posttest": "tap --coverage-report=lcov"
   },
   "repository": {
     "type": "git",
