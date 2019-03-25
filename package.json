@@ -17,11 +17,7 @@
   },
   "homepage": "https://github.com/jmarca/calvad_read_imputation_csv#readme",
   "devDependencies": {
-    "mocha": "^6.0.2",
-    "request": "^2.88.0",
-    "should": "^13.2.3",
-    "tap": "^12.6.1",
-    "tough-cookie": "^3.0.1"
+    "tap": "^12.6.1"
   },
   "dependencies": {
     "config_okay": "^1.0.1",
