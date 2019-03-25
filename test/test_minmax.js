@@ -1,138 +1,108 @@
-var should = require('should')
-var _ = require('lodash')
+const tap = require('tap')
+const get_district = require('../lib/get_district.js')
+const utils = require('./utils.js')
 
-var min_max_handler = require('../lib/handle_minmax.js')
+const _ = require('lodash')
+
+const min_max_handler = require('../lib/handle_minmax.js')
+const create_db =  require('../lib/create_db.js')
 
 // just get the file name, pass to min_max_hanler for testing
 
-var request = require('request')
 
-var cdb // global so I can delete it
-var headers = {
+const headers = {
     'content-type': 'application/json',
     'accept': 'application/json'
 };
 
 
 
-function create_tempdb(cb){
-    var date = new Date()
-    var test_db_unique = [config.couchdb.trackingdb,
-                          date.getHours(),
-                          date.getMinutes(),
-                          date.getSeconds(),
-                          date.getMilliseconds()].join('-')
-    config.couchdb.trackingdb = test_db_unique
-    cdb ='http://'+
-        [config.couchdb.host+':'+config.couchdb.port
-        ,config.couchdb.trackingdb].join('/')
-    request.put(cdb,{
-        jar:true,
-        'content-type': 'application/json',
-        'accept': 'application/json',
-        headers:headers,
-        auth:{'user':config.couchdb.auth.username,
-              'pass':config.couchdb.auth.password,
-              'sendImmediately': true}
-    },
-                function(e,r,b){
+const path    = require('path')
+const rootdir = path.normalize(__dirname)
 
-                    if(r.error){
-                        // do not delete if we didn't create
-                        config.delete_db=false
-                    }else{
-                        config.delete_db=true
-                    }
-                    //console.log(result.text)
-                    return cb()
+const config_file = rootdir+'/../test.config.json'
+const config_okay = require('config_okay')
+
+const check = require('couch_check_state')
+
+
+config_okay(config_file)
+    .then( async (config) => {
+
+
+        const  date = new Date()
+        const db = ['a%2ftest%2fdb%2f',
+                    date.getHours(),
+                    date.getMinutes(),
+                    date.getSeconds(),
+                    date.getMilliseconds()].join('-')
+
+        await tap.test('should create a db', t => {
+            utils.promise_wrapper(create_db,
+                                  config,
+                                  db)
+                .then( r =>{
+                    t.ok(r)
+                    t.notOk(r.error)
+                    return t.end()
                 })
-    return null
-}
+                .catch( e => {
+                    console.log('error',e)
+                    t.fail()
+                })
+        })
+        config.couchdb.trackingdb = db
 
-
-function delete_tempdb(config,cb){
-    request.del(cdb
-                ,{
-                    'content-type': 'application/json',
-                    'auth': {
-                        'user': config.couchdb.auth.username,
-                        'pass': config.couchdb.auth.password,
-                        'sendImmediately': true
-                    }
-                }
-                ,cb)
-    return null
-
-}
-
-var path    = require('path')
-var rootdir = path.normalize(__dirname)
-var config_okay = require('config_okay')
-var config_file = rootdir+'/../test.config.json'
-var config
-var check = require('couch_check_state')
-
-before(function(done){
-
-    config_okay(config_file,function(err,c){
-        config=c
-        queue(1)
-        .defer(create_tempdb)
-        .await(done)
-        return null
-    })
-    return null
-})
-
-
-after(function(done){
-
-    delete_tempdb(config,function(e){
-        if(e) throw new Error(e)
-        return done()
-    })
-
-})
-
-var queue = require('queue-async')
-
-describe('read csv for min max',function(){
-    it('should read a file',function(done){
-        var accum = {}
-        min_max_handler('./test/files/vds_id.1205668.truck.imputed.2012.csv'
-                        ,config
-                        ,2012
-                        ,function(e){
-                            should.not.exist(e)
-                            // check couchdb doc for min and max values
-
-                            var taskmin =
-                                    _.assign({}
-                                             ,config.couchdb
-                                             ,{'doc':'1205668'
-                                               ,'year':2012
-                                               ,'state':'mints'
-                                               ,'db':config.couchdb.trackingdb
-                                              })
-                            var taskmax =
-                                    _.assign({}
-                                             ,config.couchdb
-                                             ,{'doc':'1205668'
-                                               ,'year':2012
-                                               ,'state':'maxts'
-                                               ,'db':config.couchdb.trackingdb
-                                              })
-                            var q = queue()
-                            q.defer(check,taskmin)
-                            q.defer(check,taskmax)
-                            q.awaitAll(function(e,r){
-                                r[0].should.eql('2012-09-06 14:00:00')
-                                r[1].should.eql('2012-12-28 09:00:00')
-                                return done()
-                            })
-                            return null
+        await tap.test('read csv file for min max', t =>{
+            const accum = {}
+            utils.promise_wrapper(
+                min_max_handler,
+                './test/files/vds_id.1205668.truck.imputed.2012.csv'
+                ,config
+                ,2012)
+                .then( async ()=>{
+                    var taskmin =
+                        _.assign({}
+                                 ,config.couchdb
+                                 ,{'doc':'1205668'
+                                   ,'year':2012
+                                   ,'state':'mints'
+                                   ,'db':config.couchdb.trackingdb
+                                  })
+                    var taskmax =
+                        _.assign({}
+                                 ,config.couchdb
+                                 ,{'doc':'1205668'
+                                   ,'year':2012
+                                   ,'state':'maxts'
+                                   ,'db':config.couchdb.trackingdb
+                                  })
+                    await utils.promise_wrapper(check,taskmin)
+                        .then( r =>{
+                            t.equal(r,'2012-09-06 14:00:00')
                         })
+
+                    await utils.promise_wrapper(check,taskmax)
+                        .then( r =>{
+                            t.equal(r,'2012-12-28 09:00:00')
+                        })
+
+                })
+                .then(()=>{
+                    t.end()
+                })
+                .catch( e => {
+                    console.log('error',e)
+                    t.fail()
+                })
+
+        })
+
+        config.couchdb.db = db
+        tap.end()
+        await utils.delete_tempdb(config)
+            .catch( e => {
+                console.log('error deleting',e)
+            })
         return null
-    })
-    return null
 })

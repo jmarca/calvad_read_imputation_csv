@@ -10,10 +10,10 @@ function delete_tempdb(config){
               ,config.couchdb.auth.password)
 }
 
-function promise_wrapper(fn,arg1,arg2){
-    if (arg2 !== undefined) {
+function promise_wrapper(fn,arg1,arg2,arg3){
+    if (arg3 !== undefined) {
         return new Promise((resolve, reject)=>{
-            fn(arg1,arg2,function(e,r){
+            fn(arg1,arg2,arg3,function(e,r){
                 if(e){
                     console.log(e)
                     return reject(e)
@@ -23,16 +23,29 @@ function promise_wrapper(fn,arg1,arg2){
             })
         })
     }else{
-        return new Promise((resolve, reject)=>{
-            fn(arg1,function(e,r){
-                if(e){
-                    console.log(e)
-                    return reject(e)
+        if (arg2 !== undefined) {
+            return new Promise((resolve, reject)=>{
+                fn(arg1,arg2,function(e,r){
+                    if(e){
+                        console.log(e)
+                        return reject(e)
                 }else{
                     return resolve(r)
                 }
+                })
             })
-        })
+        }else{
+            return new Promise((resolve, reject)=>{
+                fn(arg1,function(e,r){
+                    if(e){
+                        console.log(e)
+                        return reject(e)
+                    }else{
+                        return resolve(r)
+                    }
+                })
+            })
+        }
     }
 }
 
