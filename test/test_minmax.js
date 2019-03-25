@@ -10,13 +10,6 @@ const create_db =  require('../lib/create_db.js')
 // just get the file name, pass to min_max_hanler for testing
 
 
-const headers = {
-    'content-type': 'application/json',
-    'accept': 'application/json'
-};
-
-
-
 const path    = require('path')
 const rootdir = path.normalize(__dirname)
 
