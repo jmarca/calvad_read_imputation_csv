@@ -11,7 +11,7 @@ env:
     - COUCHDB_VERSION=2.3.1
     - COUCHDB_USER=james
     - COUCHDB_PASSWORD=grobblefruit
-    - CC_TEST_REPORTER_ID=
+    - CC_TEST_REPORTER_ID=d2038e47daa14d650077e415b4b422e93b9708ceb1b95eab190f882356723c39
 
 
 services:
