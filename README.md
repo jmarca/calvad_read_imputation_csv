@@ -1,5 +1,10 @@
 # CalVAD Read CSV Imputation Data into CouchDB
 
+[![Build Status](https://travis-ci.org/jmarca/calvad_read_imputation_csv.svg?branch=master)](https://travis-ci.org/jmarca/calvad_read_imputation_csv)
+[![Maintainability](https://api.codeclimate.com/v1/badges/84bf21077042f74465d7/maintainability)](https://codeclimate.com/github/jmarca/calvad_read_imputation_csv/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/84bf21077042f74465d7/test_coverage)](https://codeclimate.com/github/jmarca/calvad_read_imputation_csv/test_coverage)
+
+
 This repo contains some code to parse the output of the truck
 imputation process, and to write that data into CouchDB.  Actually, it
 doesn't do the writing, but it does set things up to be written using
