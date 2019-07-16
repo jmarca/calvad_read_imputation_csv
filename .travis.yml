@@ -1,0 +1,39 @@
+# Sample .travis.yml for R projects from https://github.com/craigcitro/r-travis
+
+language: node_js
+node_js:
+  - "node"
+  - "8"
+
+
+env:
+  global:
+    - COUCHDB_VERSION=2.3.1
+    - COUCHDB_USER=james
+    - COUCHDB_PASSWORD=grobblefruit
+    - CC_TEST_REPORTER_ID=
+
+
+services:
+  - docker
+
+before_install:
+  - docker pull couchdb:$COUCHDB_VERSION
+  - docker run -d  -e COUCHDB_USER=$COUCHDB_USER  -e COUCHDB_PASSWORD=$COUCHDB_PASSWORD -p 5984:5984 couchdb:$COUCHDB_VERSION
+
+
+before_script:
+  # Make sure CouchDB is up
+  - while [ $? -ne 0 ]; do sleep 1 && curl -v http://localhost:5984; done
+  - echo "{\"couchdb\":{\"host\":\"127.0.0.1\",\"port\":5984,\"db\":\"newdb\",\"auth\":{\"username\":\"${COUCHDB_USER}\",\"password\":\"${COUCHDB_PASSWORD}\"}}}" > test.config.json && chmod 0600 test.config.json
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
+
+after_script:
+  - ./node_modules/.bin/tap --coverage-report=lcov &&  ./cc-test-reporter after-build  -t lcov --exit-code $TRAVIS_TEST_RESULT
