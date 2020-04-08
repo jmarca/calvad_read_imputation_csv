@@ -28,7 +28,7 @@
     "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
     "csv-parse": "^4.3.4",
     "d3-queue": "^3.0.7",
-    "glob": "^7.1.3",
+    "glob": "^7.1.6",
     "lodash": "^4.17.14",
     "minimist": "^1.2.0"
   }
