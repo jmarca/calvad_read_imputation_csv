@@ -26,7 +26,7 @@
     "couch_set_state": "jmarca/couch_set_state",
     "couchdb_bulkdoc_appender": "jmarca/couchdb_bulkdoc_appender",
     "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
-    "csv-parse": "^4.3.4",
+    "csv-parse": "^4.8.8",
     "d3-queue": "^3.0.7",
     "glob": "^7.1.3",
     "lodash": "^4.17.14",
