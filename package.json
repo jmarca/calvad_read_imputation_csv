@@ -20,19 +20,19 @@
   },
   "homepage": "https://github.com/jmarca/calvad_read_imputation_csv#readme",
   "devDependencies": {
-    "tap": "^14.4.1"
+    "tap": "^14.10.7"
   },
   "dependencies": {
     "config_okay": "^1.0.1",
-    "couch_check_state": "jmarca/couch_check_state",
-    "couch_set_state": "jmarca/couch_set_state",
-    "couchdb_bulkdoc_appender": "jmarca/couchdb_bulkdoc_appender",
-    "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
+    "couch_check_state": "github:jmarca/couch_check_state",
+    "couch_set_state": "github:jmarca/couch_set_state",
+    "couchdb_bulkdoc_appender": "github:jmarca/couchdb_bulkdoc_appender",
+    "couchdb_bulkdoc_saver": "github:jmarca/couchdb_bulkdoc_saver",
     "csv-parse": "^4.8.8",
     "d3-queue": "^3.0.7",
     "glob": "^7.1.6",
-    "lodash": "^4.17.14",
-    "minimist": "^1.2.0",
+    "lodash": "^4.17.15",
+    "minimist": "^1.2.5",
     "snyk": "^1.316.1"
   },
   "snyk": true
