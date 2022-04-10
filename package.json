@@ -32,7 +32,7 @@
     "d3-queue": "^3.0.7",
     "glob": "^7.1.6",
     "lodash": "^4.17.20",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "snyk": "^1.685.0"
   },
   "snyk": true
